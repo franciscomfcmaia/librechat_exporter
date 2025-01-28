@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from prometheus_client import start_http_server
 from prometheus_client.core import GaugeMetricFamily, REGISTRY
 from prometheus_client.registry import Collector
+from pymongo.uri_parser import parse_uri
 import logging
 import os
 import signal
@@ -27,8 +28,17 @@ class LibreChatMetricsCollector(Collector):
         """
         Initialize the MongoDB client and set up initial state.
         """
+        # Parse the URI to extract the database name
+        parsed_uri = parse_uri(mongodb_uri)
+        database_name = parsed_uri.get("database")  # Extract the database name
+
+        # If no database is specified in the URI, set a default name
+        if not database_name:
+            database_name = "default_db"  # Replace with your preferred default name
+
+        # Initialize the MongoDB client and connect to the database
         self.client = MongoClient(mongodb_uri)
-        self.db = self.client["LibreChat"]
+        self.db = self.client[database_name]
         self.messages_collection = self.db["messages"]
 
     def collect(self):
